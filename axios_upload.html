@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+  <head>
+    <title>axios - file upload example</title>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.2/css/bootstrap.min.css"/>
+  </head>
+  <body class="container">
+    <h1>file upload</h1>
+
+    <form role="form" class="form" onsubmit="return false;">
+      <div class="form-group">
+        <label for="file">File</label>
+        <input id="file" type="file" class="form-control"/>
+      </div>
+      <button id="upload" type="button" class="btn btn-primary">Upload</button>
+    </form>
+
+    <div id="output" class="container"></div>
+    
+    <!--gsutil signurl -m RESUMABLE -d 10h -c "text/plain" your-key-file-here.json gs://your-bucket-name/filename.file -->
+        
+    <script src="https://npmcdn.com/axios/dist/axios.min.js"></script>
+    <script>
+    function getUploadLink() {
+      var startLink = "your upload link from gsutil";
+      var config = {
+        headers: {
+          'content-type': 'text/plain',
+          'x-goog-resumable': 'start',
+        }
+      };
+      return axios.post(startLink, {}, config)
+    }
+
+      var uploadLink;
+      getUploadLink().then(function(response) {
+        uploadLink = response.headers.location;
+        console.log("Upload link: ", uploadLink);
+      }).catch(function (err) {
+        console.warn('Error in getUploadLink', err)
+      });
+
+      function uploadFile () {
+        var config = {
+          headers: {
+            'content-type': 'text/plain',
+          }
+        };
+
+        var output = document.getElementById('output');
+        document.getElementById('upload').onclick = function () {
+          var data = document.getElementById('file').files[0];
+          axios.put(uploadLink, data, config) //,config)
+            .then(function (res) {
+              console.log(res);
+              output.className = 'container';
+              output.innerHTML = res.data;
+            })
+            .catch(function (err) {
+              console.log(err);
+              output.className = 'container text-danger';
+              output.innerHTML = err;
+            });
+        };
+      }
+
+      uploadFile();
+    </script>
+  </body>
+</html>
